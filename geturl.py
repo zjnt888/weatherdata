@@ -5,7 +5,7 @@ import re                               # 正则表达式
 from xpinyin import Pinyin              # 拼音库
 
 
-def get_url(city):
+def get_weatherurl(city):
     # 获取city下历史月份页面中的所有链接
     session = HTMLSession()
     url_city = 'http://www.tianqihoubao.com/lishi/' + city + '.html'
@@ -24,7 +24,7 @@ if __name__ == '__main__':
             city = p.get_pinyin(city, '')
     # 调用模块
     print('开始获取链接......')
-    url_months = get_url(city)
+    url_months = get_weatherurl(city)
     if url_months == []:
         print('没有成功获取链接（城市名称错或其它原因）')
     else:
