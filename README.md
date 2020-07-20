@@ -1,4 +1,4 @@
-# weaterdata 0.1 (爬取天气后报网数据)
+# weatherdata 0.1 (爬取天气后报网数据)
 ## 主要模块及功能
 * get_weatherurl(city)            根据city参数获取历史逐月天气页面的链接，返回一个list。
 * get_weatherdata(urls)           获取含天气信息的表格，返回一个dataframe。
