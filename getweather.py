@@ -1,8 +1,9 @@
 import pandas as pd
-import requests
 import matplotlib.pyplot as plt
 from requests_html import HTMLSession  # 最新的爬虫工具requests-html
 import re  # 正则表达式
+import aiohttp
+import asyncio
 
 
 # 获取每个月天气的链接
@@ -14,17 +15,41 @@ def get_weatherurl(city):
     link_all = r.html.absolute_links
     regex = '[0-9]{6}'  # 匹配有6个数字
     url_months = [x for x in link_all if re.compile(regex).findall(x)]
+    session.close()
     return url_months
 
 
-# 获取urls列表中的天气数据并合并输出模块
+# 同步模块：获取urls列表中的天气数据并合并输出模块
 def get_weatherdata(urls):
     table_months = pd.DataFrame()
+    session = HTMLSession()
     for url in urls:
-        response = requests.get(url)
+        response = session.get(url)
         # 使用pandas内置的read_html函数读取表格，合并到table_months一张大表中
-        table_day = pd.read_html(response.text, header=0)[0]
-        table_months = pd.concat([table_months, table_day])
+        table_month = pd.read_html(response.text, header=0)[0]
+        table_months = pd.concat([table_months, table_month])
+    session.close()
+    return table_months
+
+
+# 异步模块：使用异步aiohttp模块，获取一个链接的Html，并返回。
+async def async_gethtml(url):
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url) as response:
+            return await response.text()
+
+
+# 异步模块：获取urls的所有链接的html，取出其中的表格并返回。
+async def async_get_weatherdata(urls):
+    table_months = pd.DataFrame()
+    # 添加任务，去每个链接的html
+    tasks = [asyncio.ensure_future(async_gethtml(url)) for url in urls]
+    # 将任务添加到序列中
+    await asyncio.gather(*tasks)
+    # 取出每个task的返回值，并合并
+    for task in tasks:
+        table_month = pd.read_html(task.result(), header=0)[0]
+        table_months = pd.concat([table_months, table_month])
     return table_months
 
 
@@ -54,10 +79,11 @@ def format_weatherdata(table):
     table['最高气温'] = table['最高气温'].str.replace('℃', '').replace(' ', '').astype(int)
     table['最低气温'] = table['最低气温'].str.replace('℃', '').replace(' ', '').astype(int)
     table = table.drop(['气温'], axis=1)
-    # 处理中文日期
+    # 处理中文日期，并将日期列作为索引
     table['日期'] = to_date(table['日期'])
-    # 将日期列作为索引
     table.set_index(['日期'], inplace=True)
+    # 按照索引（日期）排序
+    table.sort_index()
     return table
 
 
@@ -87,8 +113,19 @@ def plot_weatherdata(table):
 
 
 if __name__ == '__main__':
-    table1 = format_weatherdata(get_weatherdata(['http://www.tianqihoubao.com/lishi/nantong/month/201601.html',
-                                                 'http://www.tianqihoubao.com/lishi/nantong/month/201602.html',
-                                                 'http://www.tianqihoubao.com/lishi/nantong/month/201603.html']))
-    print(table1)
-    plot_weatherdata(table1)
+    urls = ['http://www.tianqihoubao.com/lishi/nantong/month/201601.html',
+            'http://www.tianqihoubao.com/lishi/nantong/month/201602.html',
+            'http://www.tianqihoubao.com/lishi/nantong/month/201603.html',
+            'http://www.tianqihoubao.com/lishi/nantong/month/201604.html',
+            'http://www.tianqihoubao.com/lishi/nantong/month/201605.html',
+            'http://www.tianqihoubao.com/lishi/nantong/month/201606.html',
+            'http://www.tianqihoubao.com/lishi/nantong/month/201607.html',
+            'http://www.tianqihoubao.com/lishi/nantong/month/201608.html',
+            'http://www.tianqihoubao.com/lishi/nantong/month/201609.html',
+            'http://www.tianqihoubao.com/lishi/nantong/month/201610.html',
+            'http://www.tianqihoubao.com/lishi/nantong/month/201611.html',
+            'http://www.tianqihoubao.com/lishi/nantong/month/201612.html']
+    tables = asyncio.run(async_get_weatherdata(urls))
+    tables = format_weatherdata(tables)
+    print(tables)
+    plot_weatherdata(tables)
