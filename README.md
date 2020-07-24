@@ -1,5 +1,8 @@
 # weatherdata (爬取天气后报网数据)
 
+## weatherdat 3.0
+* 完善get_weatherurl(city)模块，增加中文城市名转换成英文功能。
+
 ## weatherdat 2.0 主要模块及功能
 增加异步爬虫模块，提高爬取速度。
 * async def async_gethtml(url)    爬取一个网页的html数据
