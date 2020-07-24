@@ -4,10 +4,16 @@ from requests_html import HTMLSession  # 最新的爬虫工具requests-html
 import re  # 正则表达式
 import aiohttp
 import asyncio
+from xpinyin import Pinyin
 
 
 # 获取每个月天气的链接
 def get_weatherurl(city):
+    # 调用拼音模块，如果city是中文则转换成拼音
+    p = Pinyin()
+    for ch in city:
+        if '\u4e00' <= ch <= '\u9fff':
+            city = p.get_pinyin(city, '')
     # 获取city下历史月份页面中的所有链接
     session = HTMLSession()
     url_city = 'http://www.tianqihoubao.com/lishi/' + city + '.html'
